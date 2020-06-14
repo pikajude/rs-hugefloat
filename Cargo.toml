@@ -1,0 +1,15 @@
+[package]
+name = "hugefloat"
+version = "0.1.0"
+authors = ["Jude Taylor <me@jude.xyz>"]
+edition = "2018"
+description = "Extremely large, limited-precision floats for use in incremental games."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/pikajude/rs-hugefloat"
+
+[dependencies]
+thiserror = "1.0"
+serde = { version = "1.0", optional = true }
+
+[features]
+default = []
