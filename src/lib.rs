@@ -60,16 +60,16 @@ const MAX_EXPONENT: i64 = 9_000_000_000_000_000;
 impl Float {
   /// The largest value that `Float` can represent:
   /// `1e9_000_000_000_000_000`.
-  pub const MAX: Float = Float {
+  pub const MAX: Float = Self {
     exponent: MAX_EXPONENT,
     mantissa: 1.0,
   };
   /// The smallest value that `Float` can represent. Equivalent to `-MAX`.
-  pub const MIN: Float = Float {
+  pub const MIN: Float = Self {
     exponent: MAX_EXPONENT,
     mantissa: -1.0,
   };
-  pub const NAN: Float = Float {
+  pub const NAN: Float = Self {
     exponent: 0,
     mantissa: std::f64::NAN,
   };
@@ -98,12 +98,25 @@ impl Float {
     self
   }
 
+  /// Construct a new `Float` directly, skipping the normalization step. This is
+  /// equivalent to a direct construction of the `Float` struct. Skipping
+  /// normalization allows use of this method in `const` contexts.
+  ///
+  /// # Safety
+  ///
+  /// You should ensure that `1.0 <= mantissa < 10.0`, and that `exponent != 0`.
+  /// Any value outside of thse ranges will cause unpredictable (and incorrect)
+  /// behavior during any of the mathematical operations.
+  pub const unsafe fn new_unchecked(mantissa: f64, exponent: i64) -> Self {
+    Self { mantissa, exponent }
+  }
+
   /// Construct a `Float` from a base and exponent.
   pub fn sci(base: f64, exponent: i64) -> Self {
     if !base.is_finite() {
       Self::NAN
     } else {
-      Float {
+      Self {
         mantissa: base,
         exponent,
       }
@@ -122,7 +135,7 @@ impl Float {
         Self::MIN
       }
     } else if value == 0.0 || value == -0.0 {
-      Float {
+      Self {
         mantissa: 0.0,
         exponent: 0,
       }
@@ -130,7 +143,7 @@ impl Float {
       let exponent = value.abs().log10().floor() as i64;
       let base = table::POWERS[(exponent + table::TABLE_CENTER as i64) as usize];
       let mantissa = value / base;
-      Float { exponent, mantissa }.normalize()
+      Self { exponent, mantissa }.normalize()
     }
   }
 
@@ -159,7 +172,7 @@ impl Float {
   /// assert!(Float::sci(1.0, 10000).to_float().is_infinite());
   /// ```
   pub fn to_float(self) -> f64 {
-    dbg!(self.mantissa) * dbg!(10.0f64.powi(dbg!(self.exponent as i32)))
+    self.mantissa * 10.0f64.powi(self.exponent as i32)
   }
 
   pub fn abs(mut self) -> Self {
@@ -309,7 +322,7 @@ impl FromStr for Float {
 
 impl Display for Float {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    let Float { mantissa, exponent } = *self;
+    let Self { mantissa, exponent } = *self;
     if mantissa.is_nan() {
       write!(f, "NaN")
     } else if exponent >= MAX_EXPONENT {
@@ -602,7 +615,7 @@ fn test_math_ops() {
   let mut bignum = Float::sci(1.2345, 347);
 
   bignum = bignum.powf(2.0);
-  assert_eq!(bignum, Float::sci(1.523990249999763, 694));
+  assert_eq!(bignum, Float::sci(1.523_990_249_999_763, 694));
   bignum = bignum.powf(56.1);
-  assert_eq!(bignum, Float::sci(4.627013609064963, 38943));
+  assert_eq!(bignum, Float::sci(4.627_013_609_064_963, 38943));
 }
